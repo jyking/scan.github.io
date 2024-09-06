@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>订单扫描</title>
+<style>
+  .container {
+    display: flex;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+  .textarea-section {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  textarea {
+    width: 80%;
+    height: 80%;
+    padding: 20px;
+    font-size: 18px;
+    line-height: 1.6;
+    border: none;
+    resize: none;
+    background: #f7f7f7;
+  }
+  .table-section {
+    width: 40%;
+    overflow-y: auto; /* Enable scrollbar if table is too long */
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+  }
+  th {
+    background-color: #f2f2f2;
+  }
+  .highlight {
+    background-color: #c8f08f; /* Light green background */
+    transition: background-color 0.5s;
+  }
+  .button-section {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 18px;
+    margin: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="textarea-section">
+    <textarea id="inputTextarea" placeholder="输入编号..."></textarea>
+  </div>
+  <div class="table-section">
+    <table id="outputTable">
+      <thead>
+        <tr>
+          <th>序号</th>
+          <th>编号</th>
+          <th>订单号</th>
+          <th>扫描时间</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  <div class="button-section">
+    <button id="scanButton">开始扫码</button>
+  </div>
+</div>
+
+<script>
+  const inputTextarea = document.getElementById('inputTextarea');
+  const outputTable = document.getElementById('outputTable').getElementsByTagName('tbody')[0];
+  const scanButton = document.getElementById('scanButton');
+  let isScanning = false; // 标识是否正在扫描
+
+  function splitString(str) {
+    const parts = str.split(/[\|\t, ]+/);
+    if (parts.length === 1) {
+      parts.push('');
+    }
+    return parts;
+  }
+
+  inputTextarea.addEventListener('input', () => {
+    const lines = inputTextarea.value.split('\n');
+    outputTable.innerHTML = '';
+
+    lines.forEach((line, index) => {
+      const row = outputTable.insertRow();
+      const lineNumberCell = row.insertCell(0);
+      const contentCell = row.insertCell(1);
+      const orderCell = row.insertCell(2);
+      const timeCell = row.insertCell(3);
+
+      lineNumberCell.textContent = index + 1;
+      contentCell.textContent = splitString(line)[0];
+      orderCell.textContent = splitString(line)[1];
+      timeCell.textContent = ''; // Initially empty
+    });
+  });
+
+  scanButton.addEventListener('click', () => {
+    if (!isScanning) {
+      // 开始监听
+      window.addEventListener('keypress', handleKeyPress);
+      scanButton.blur()
+      inputTextarea.disabled=true;
+      scanButton.textContent = '停止扫码';
+    } else {
+      // 停止监听
+      window.removeEventListener('keypress', handleKeyPress);
+      scanButton.textContent = '开始扫码';
+      scanButton.blur()
+    }
+    isScanning = !isScanning;
+  });
+
+  function handleKeyPress(e) {
+    let currCode = e.keyCode || e.which || e.charCode;
+    let currTime = new Date().getTime();
+    if (lastTime > 0) {
+      if (currTime - lastTime <= myTime) {
+        barCode += String.fromCharCode(currCode);
+      } else {
+        ClearBarCode();
+      }
+    } else {
+      barCode = String.fromCharCode(currCode);
+    }
+    lastTime = currTime;
+
+    if (currCode == 13) { // Enter key
+      if (barCode && barCode.length >= 3) {
+        const currentTime = new Date().toLocaleTimeString();
+        let matched = false;
+        for (let i = 0; i < outputTable.rows.length; i++) {
+          // Check if the row is already highlighted
+          if (outputTable.rows[i].cells[1].textContent.trim().toUpperCase() === barCode.trim().toUpperCase() && !outputTable.rows[i].classList.contains('highlight')) {
+            outputTable.rows[i].cells[3].textContent = currentTime;
+            outputTable.rows[i].classList.add('highlight');
+            matched = true;
+            outputTable.rows[i].scrollIntoView({ behavior: 'smooth' });
+            var audio = new Audio('https://downsc.chinaz.net/Files/DownLoad/sound1/202309/y2083.mp3'); // 替换为你的音频文件路径
+            audio.play();
+            break;
+          }
+        }
+        if (!matched) {
+          console.log("未找到匹配的编号：" + barCode);
+        }
+        ClearBarCode();
+      }
+    }
+  }
+
+  let barCode = '';
+  let lastTime = 0;
+  const myTime = 2000; // Time in milliseconds
+
+  function ClearBarCode() {
+    barCode = '';
+    lastTime = 0;
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>订单扫描</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    iframe {
+      border: none;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <iframe id="myFrame" src=""></iframe>
+  <script>
+    function loadPageWithRandom() {
+      const randomNumber = Math.random()*1000;
+      const targetUrl = 'order.html?random=' + randomNumber;
+      document.getElementById('myFrame').src = targetUrl;
+    }
+    loadPageWithRandom();
+  </script>
+</body>
+
+</html>
